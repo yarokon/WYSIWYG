@@ -1,0 +1,51 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: #607d8b;
+}
+
+main {
+  min-width: 700px;
+  max-width: 900px;
+  height: 300px;
+  margin:  20px auto;
+  border:  2px solid #ff5722;
+}
+
+ #text-area {
+  width: 100%;
+  height: 85%;
+
+  padding: 30px;
+  border: 1px solid grey;
+
+  resize: none;
+  outline: none;
+  background-color: #fff;
+  overflow: auto;
+  font-family: sans-serif;
+}
+
+#control-panel {
+  width: 100%;
+  height: 15%;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  background: #ccc;
+}
+
+button {
+  margin: 2px;
+  height: 32px;
+}
+
+input {
+  height: 32px;
+  width: 32px;
+  margin: 2px;
+}
