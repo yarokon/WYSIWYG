@@ -1,117 +1,133 @@
-let main = document.querySelector('main');
-let textArea = document.getElementById('text-area');
+const editor = document.getElementById('editor');
+const toolbar = document.getElementById('toolbar');
 
-const params = [{
-  id: 'fontName',
-  icon: 'Sans Serif'
-}, {
-  id: 'fontSize',
-  icon: 'format_size'
-}, {
-  id: 'bold',
-  icon: 'format_bold'
-}, {
-  id: 'italic',
-  icon: 'format_italic'
-}, {
-  id: 'underline',
-  icon: 'format_underlined'
-}, {
-  id: 'hiliteColor',
-  icon: '',
-  name: 'input',
-  attr: {
-    type: 'color'
-  }
-}, {
-  id: 'justifyLeft',
-  icon: 'format_align_left'
-}, {
-  id: 'justifyCenter',
-  icon: 'format_align_center'
-}, {
-  id: 'justifyRight',
-  icon: 'format_align_right'
-}, {
-  id: 'insertOrderedList',
-  icon: 'format_list_numbered'
-}, {
-  id: 'insertUnorderedList',
-  icon: 'format_list_bulleted'
-}, {
-  id: 'outdent',
-  icon: 'format_indent_decrease'
-}, {
-  id: 'indent',
-  icon: 'format_indent_increase'
-}, {
-  id: 'removeFormat',
-  icon: 'format_clear'
-}];
+/******************************/
 
-let controlPanel = document.createElement('div');
-controlPanel.id = 'control-panel';
+function addMaterialClass (icons) {
+  for (let i = 0; i < icons.length; i++) {
 
-let cmdElemnts = {};
+    const icon = icons[i];
 
-params.forEach(el => {
-  let type = el.name || 'button';
-
-  let cmd = document.createElement(type);
-  if (el.icon.startsWith('format')) {
-    cmd.className = 'material-icons';
-  }
-
-  if (el.attr) {
-    cmd.setAttribute('type', el.attr.type);
-  }
-
-  cmd.id = el.id;
-  cmd.textContent = el.icon;
-
-  cmdElemnts[el.id] = cmd;
-  controlPanel.append(cmd);
-});
-
-main.append(controlPanel);
-
-
-function addListenerMulti(el, s, fn) {
-  s.split(' ').forEach(e => el.addEventListener(e, fn, false));
-}
-
-addListenerMulti(textArea, 'click keyup focus', highlight);
-
-function highlight() {
-  for (let elem in cmdElemnts) {
-    if (isSelectionState(elem)) {
-      cmdElemnts[elem].style.background = '#ffc107';
-    } else {
-      cmdElemnts[elem].style.background = '';
+    if (icon.textContent.startsWith('format')) {
+      icon.className = 'material-icons';
     }
   }
 }
 
-function isSelectionState(state) {
-  return document.queryCommandState(state);
+addMaterialClass(toolbar.children);
+
+function addFocusOnEditor(icons) {
+  for (let i = 0; i < icons.length; i++) {
+    icons[i].addEventListener('focus', () => editor.focus());
+  }
 }
 
-controlPanel.addEventListener('click', (e) => {
-  if (e.target === e.currentTarget) return;
-  
-  transformText(e.target.id);
+addFocusOnEditor(toolbar.children);
+
+/******************************/
+
+let range;
+
+editor.onblur = function() {
+  range = saveSelection();
+}
+
+editor.onfocus = function() {
+  restoreSelection(range);
+}
+
+function saveSelection() {
+  const sel = window.getSelection();
+  return sel.getRangeAt(0);
+}
+
+function restoreSelection(range) {
+  if (range) {
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+}
+
+/******************************/
+
+let foreWrapper = toolbar.querySelector('.fore-wrapper');
+let backWrapper = toolbar.querySelector('.back-wrapper');
+
+toolbar.addEventListener('click', (e) => {
+  const target = e.target;
+
+  if (target === e.currentTarget) return;
+
+  const command = target.dataset.command;
+
+  if (target.closest('.fore-wrapper')) {
+    document.execCommand('foreColor', false, foreWrapper.dataset.value);
+    console.log(1);
+  }
+
+  if (target.closest('.back-wrapper')) {
+    document.execCommand('backColor', false, backWrapper.dataset.value);
+    console.log(2);
+  }
+
+  if (command === 'foreColor') {
+    const currentColor = target.dataset.value;
+    foreWrapper.setAttribute('data-value', currentColor);
+    document.execCommand('foreColor', false, currentColor);
+    foreWrapper.firstElementChild.style.color = currentColor;
+    console.log(3);
+  } 
+
+  if (command === 'backColor') {
+    const currentColor = target.dataset.value;
+    backWrapper.setAttribute('data-value', currentColor);
+    document.execCommand('backColor', false, currentColor);
+    backWrapper.firstElementChild.style.color = currentColor;
+    console.log(4);
+  } else {
+    document.execCommand(command, false, null);
+    editor.normalize();
+    console.log(5);
+  }
+
+  e.preventDefault();
 });
 
-function transformText(style) {
-  document.execCommand(style, false, null);
-  textArea.focus();
+
+/******************************/
+
+const colorPalette = ['#000', '#f96', '#69f', '#9f6','#c00', '#0c0', '#00c', '#333', '#06f', '#fff'];
+
+const forePalette = document.querySelector('.fore-palette');
+
+for (let i = 0; i < colorPalette.length; i++) {
+  let a = document.createElement('a');
+
+  a.href = '#';
+  a.setAttribute('data-command', 'foreColor');
+  a.setAttribute('data-value', colorPalette[i]);
+  a.style.background = colorPalette[i];
+  a.className = 'palette-item';
+
+  forePalette.append(a);
 }
 
-document.body.onload = function() {
-  textArea.focus();
+addFocusOnEditor(forePalette.children);
+
+
+const backPalette = document.querySelector('.back-palette');
+
+for (let i = 0; i < colorPalette.length; i++) {
+  let a = document.createElement('a');
+
+  a.href = '#';
+  a.setAttribute('data-command', 'backColor');
+  a.setAttribute('data-value', colorPalette[i]);
+  a.style.background = colorPalette[i];
+  a.className = 'palette-item';
+
+  backPalette.append(a);
 }
 
-document.getElementById('hiliteColor').oninput = function(e) {
-  document.execCommand('hiliteColor', false, e.target.value);
-}
-
+addFocusOnEditor(backPalette.children);

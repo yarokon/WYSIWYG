@@ -11,9 +11,38 @@
 </head>
 <body>
   <main>
-    <div id="text-area" contenteditable="true">
-      Lorem ipsum dolor sit amet, consectetur adipisicing elit. Quae officia, distinctio. Libero, non! Vel, autem nostrum minus voluptas voluptatem debitis vero voluptatibus a! Quasi soluta ex fuga modi, fugit reiciendis!
+    <div id='editor' contenteditable>
+      <h2>A WYSIWYG Editor.</h2>
+      <p>Try making some changes here.</p>
+    </div>
+
+    <div id="toolbar">
+      <a href="#" data-command="fontName">Sans Serif</a>
+      <a href="#" data-command="fontSize">format_size</a>
+      <a href="#" data-command="bold">format_bold</a>
+      <a href="#" data-command="italic">format_italic</a>
+      <a href="#" data-command="underline">format_underlined</a>
+
+      <div class="fore-wrapper" data-value="#000">
+        <i class="material-icons">format_color_text</i>
+        <div class="fore-palette"></div>
+      </div>
+      <div class="back-wrapper" data-value="#000">
+        <i class="material-icons">format_color_fill</i>
+        <div class="back-palette"></div>
+      </div>
+
+      <a href="#" data-command="justifyLeft">format_align_left</a>
+      <a href="#" data-command="justifyCenter">format_align_center</a>
+      <a href="#" data-command="justifyRight">format_align_right</a>
+      <a href="#" data-command="insertOrderedList">format_list_numbered</a>
+      <a href="#" data-command="insertUnorderedList">format_list_bulleted</a>
+      <a href="#" data-command="outdent">format_indent_decrease</a>
+      <a href="#" data-command="indent">format_indent_increase</a>
+      <a href="#" data-command="removeFormat">format_clear</a>
     </div>
   </main>
+
+  <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Quod omnis reiciendis quo quis soluta in aperiam necessitatibus voluptatem tenetur hic, repellat doloremque ipsa porro ut deleniti cum illum facilis at!</p>
 </body>
 </html>
