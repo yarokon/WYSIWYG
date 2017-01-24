@@ -1,7 +1,30 @@
 const editor = document.getElementById('editor');
 const toolbar = document.getElementById('toolbar');
 
-/******************************/
+/***********/
+function addListenerMulti(el, s, fn) {
+  s.split(' ').forEach(e => el.addEventListener(e, fn, false));
+}
+
+addListenerMulti(editor, 'input keyup mouseup', highlight);
+
+function highlight() {
+  const links = toolbar.children;
+
+  for (let i = 0; i < links.length; i++) {
+    const link = links[i];
+
+    if (link.tagName === 'A') {
+      if (document.queryCommandState(link.dataset.command)) {
+        link.style.background = '#ff9800';
+      } else {
+        link.style.background = '';
+      }
+    }
+  }
+}
+
+/**************************************************/
 
 function addMaterialClass (icons) {
   for (let i = 0; i < icons.length; i++) {
@@ -18,116 +41,264 @@ addMaterialClass(toolbar.children);
 
 function addFocusOnEditor(icons) {
   for (let i = 0; i < icons.length; i++) {
-    icons[i].addEventListener('focus', () => editor.focus());
+    icons[i].addEventListener('focus', () => {
+        editor.focus();
+    });
   }
 }
 
 addFocusOnEditor(toolbar.children);
 
-/******************************/
+/**************************************************/
 
-let range;
+class Selection {
+  constructor(editor) {
+    editor.onblur = () => {
+      this.saveSelection();
+    }
 
-editor.onblur = function() {
-  range = saveSelection();
-}
+    editor.onfocus = () => {
+      this.restoreSelection();
+    }
+  }
 
-editor.onfocus = function() {
-  restoreSelection(range);
-}
-
-function saveSelection() {
-  const sel = window.getSelection();
-  return sel.getRangeAt(0);
-}
-
-function restoreSelection(range) {
-  if (range) {
+  saveSelection() {
     const sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
+    this.range = sel.getRangeAt(0);
+  }
+
+  restoreSelection() {
+    if (this.range) {
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(this.range);
+    }
   }
 }
 
-/******************************/
+new Selection(editor);
 
-let foreWrapper = toolbar.querySelector('.fore-wrapper');
-let backWrapper = toolbar.querySelector('.back-wrapper');
+/**************************************************/
+
+class Picker {
+  constructor(options) {
+    Object.assign(this, options);
+  }
+
+  getElem() {
+    if (!this.container) {
+      this.render();
+    }
+
+    return this.container;
+  }
+
+  renderContainer() {
+    this.container = document.createElement('div');
+    this.container.className = 'wrapper';
+
+    this.icon = document.createElement('i');
+    this.icon.textContent = this.iconStyle;
+
+    if (this.iconStyle) {
+      this.icon.className = 'material-icons';
+    }
+
+    this.container.append(this.icon);
+  }
+
+  render() {
+    this.renderContainer();
+    this.renderContent()
+    this.container.append(this.content);
+  }
+}
+
+/**************************************************/
+
+class ColorPicker extends Picker {
+  constructor(options) {
+    super(options);
+  }
+
+  renderContent() {
+    const colorPalette = ['red', 'cyan', 'blue', 'lime','magenta', 'yellow', 'black', 'white'];
+
+    this.content = document.createElement('div');
+    this.content.className = 'palette';
+
+    for (let i = 0; i < colorPalette.length; i++) {
+      const a = document.createElement('a');
+
+      a.href = '#';
+      a.setAttribute('data-value', colorPalette[i]);
+      a.className = 'palette-item';
+      a.style.background = colorPalette[i];
+
+      this.content.append(a);
+    }
+
+    addFocusOnEditor(this.content.children);
+  }
+
+  render() {
+    super.render();
+
+    this.container.addEventListener('click', (e) => {
+      const target = e.target;
+
+      if (target.tagName === 'A') {
+        const color = target.dataset.value
+        this.currentColor = color;
+        this.icon.style.color = color;
+      }
+
+      if (target !== this.container) {
+        document.execCommand(this.commandName, false, this.currentColor);
+      }
+
+      e.preventDefault();
+    });
+  }
+}
+
+/**************************************************/
+
+class SizePicker extends Picker{
+  constructor(options) {
+    super(options);
+  }
+
+  renderContent() {
+    this.content = document.createElement('div');
+    this.content.className = 'size-board';
+
+    const fontSizes = [{
+      size: 1,
+      name: 'small'
+    }, {
+      size: 3,
+      name: 'normal'
+    }, {
+      size: 5,
+      name: 'big'
+    }, {
+      size: 6,
+      name: 'very big'
+    }];
+
+    for (let i = 0; i < fontSizes.length; i++) {
+      const a = document.createElement('a');
+
+      a.href = '#';
+      a.setAttribute('data-value', fontSizes[i].size);
+      a.className = 'fontSize-item';
+      a.textContent = fontSizes[i].name;
+
+      this.content.append(a);
+    }
+
+  }
+
+  render() {
+    super.render();
+
+    this.container.addEventListener('click', (e) => {
+      const target = e.target;
+
+      if (target.tagName === 'A') {
+        document.execCommand(this.commandName, false, target.dataset.value);
+      }
+
+      e.preventDefault();
+    });
+  }
+}
+
+class FontPicker extends Picker {
+  constructor(options) {
+    super(options);
+  }
+
+  renderContent() {
+    this.content = document.createElement('div');
+    this.content.className = 'size-board';
+
+    const fonts = ['Sans Serif', 'Georgia', 'Tahoma', 'Verdana'];
+    this.icon.replaceWith(fonts[0]);
+
+    for (let i = 0; i < fonts.length; i++) {
+      const a = document.createElement('a');
+
+      a.href = '#';
+      a.setAttribute('data-value', fonts[i]);
+      a.className = 'fontSize-item';
+      a.textContent = fonts[i];
+      this.content.append(a);
+    }
+  }
+
+  render() {
+    super.render();
+
+    this.container.addEventListener('click', (e) => {
+      const target = e.target;
+
+      if (target.tagName === 'A') {
+        document.execCommand(this.commandName, false, target.dataset.value);
+        this.container.firstChild.replaceWith(target.dataset.value);
+      }
+
+      e.preventDefault();
+    });
+  }
+}
+
+const fontButtons = [];
+
+fontButtons.push(new FontPicker({
+  commandName: 'fontName',
+}).getElem());
+
+fontButtons.push(new SizePicker({
+  commandName: 'fontSize',
+  iconStyle: 'format_size'
+}).getElem());
+
+
+toolbar.prepend(...fontButtons);
+
+/**************************************************/
+
+const colorButtons = [];
+
+colorButtons.push(new ColorPicker({
+  commandName: 'foreColor',
+  iconStyle: 'format_color_text'
+}).getElem());
+
+colorButtons.push(new ColorPicker({
+  commandName: 'backColor',
+  iconStyle: 'format_color_fill'
+}).getElem());
+
+toolbar.children[4].after(...colorButtons);
+
+/**************************************************/
 
 toolbar.addEventListener('click', (e) => {
+
+
   const target = e.target;
 
-  if (target === e.currentTarget) return;
+  if (target === e.currentTarget || target.closest('.wrapper')) return;
 
   const command = target.dataset.command;
 
-  if (target.closest('.fore-wrapper')) {
-    document.execCommand('foreColor', false, foreWrapper.dataset.value);
-    console.log(1);
-  }
-
-  if (target.closest('.back-wrapper')) {
-    document.execCommand('backColor', false, backWrapper.dataset.value);
-    console.log(2);
-  }
-
-  if (command === 'foreColor') {
-    const currentColor = target.dataset.value;
-    foreWrapper.setAttribute('data-value', currentColor);
-    document.execCommand('foreColor', false, currentColor);
-    foreWrapper.firstElementChild.style.color = currentColor;
-    console.log(3);
-  } 
-
-  if (command === 'backColor') {
-    const currentColor = target.dataset.value;
-    backWrapper.setAttribute('data-value', currentColor);
-    document.execCommand('backColor', false, currentColor);
-    backWrapper.firstElementChild.style.color = currentColor;
-    console.log(4);
-  } else {
-    document.execCommand(command, false, null);
-    editor.normalize();
-    console.log(5);
-  }
+  document.execCommand(command, false, null);
+  editor.normalize();
 
   e.preventDefault();
 });
 
-
-/******************************/
-
-const colorPalette = ['#000', '#f96', '#69f', '#9f6','#c00', '#0c0', '#00c', '#333', '#06f', '#fff'];
-
-const forePalette = document.querySelector('.fore-palette');
-
-for (let i = 0; i < colorPalette.length; i++) {
-  let a = document.createElement('a');
-
-  a.href = '#';
-  a.setAttribute('data-command', 'foreColor');
-  a.setAttribute('data-value', colorPalette[i]);
-  a.style.background = colorPalette[i];
-  a.className = 'palette-item';
-
-  forePalette.append(a);
-}
-
-addFocusOnEditor(forePalette.children);
-
-
-const backPalette = document.querySelector('.back-palette');
-
-for (let i = 0; i < colorPalette.length; i++) {
-  let a = document.createElement('a');
-
-  a.href = '#';
-  a.setAttribute('data-command', 'backColor');
-  a.setAttribute('data-value', colorPalette[i]);
-  a.style.background = colorPalette[i];
-  a.className = 'palette-item';
-
-  backPalette.append(a);
-}
-
-addFocusOnEditor(backPalette.children);
+/**************************************************/
