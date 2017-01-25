@@ -16,7 +16,7 @@ function highlight() {
 
     if (link.tagName === 'A') {
       if (document.queryCommandState(link.dataset.command)) {
-        link.style.background = '#ff9800';
+        link.style.background = '#f90';
       } else {
         link.style.background = '';
       }
@@ -111,6 +111,16 @@ class Picker {
     this.renderContainer();
     this.renderContent()
     this.container.append(this.content);
+
+    this.container.addEventListener('click', (e) => {
+      const target = e.target;
+
+      if (target.tagName === 'A') {
+        document.execCommand(this.commandName, false, target.dataset.value);
+      }
+
+      e.preventDefault();
+    });
   }
 }
 
@@ -140,26 +150,6 @@ class ColorPicker extends Picker {
 
     addFocusOnEditor(this.content.children);
   }
-
-  render() {
-    super.render();
-
-    this.container.addEventListener('click', (e) => {
-      const target = e.target;
-
-      if (target.tagName === 'A') {
-        const color = target.dataset.value
-        this.currentColor = color;
-        this.icon.style.color = color;
-      }
-
-      if (target !== this.container) {
-        document.execCommand(this.commandName, false, this.currentColor);
-      }
-
-      e.preventDefault();
-    });
-  }
 }
 
 /**************************************************/
@@ -184,7 +174,7 @@ class SizePicker extends Picker{
       name: 'big'
     }, {
       size: 6,
-      name: 'very big'
+      name: 'huge'
     }];
 
     for (let i = 0; i < fontSizes.length; i++) {
@@ -200,19 +190,6 @@ class SizePicker extends Picker{
 
   }
 
-  render() {
-    super.render();
-
-    this.container.addEventListener('click', (e) => {
-      const target = e.target;
-
-      if (target.tagName === 'A') {
-        document.execCommand(this.commandName, false, target.dataset.value);
-      }
-
-      e.preventDefault();
-    });
-  }
 }
 
 class FontPicker extends Picker {
@@ -245,7 +222,6 @@ class FontPicker extends Picker {
       const target = e.target;
 
       if (target.tagName === 'A') {
-        document.execCommand(this.commandName, false, target.dataset.value);
         this.container.firstChild.replaceWith(target.dataset.value);
       }
 
@@ -288,7 +264,6 @@ toolbar.children[4].after(...colorButtons);
 
 toolbar.addEventListener('click', (e) => {
 
-
   const target = e.target;
 
   if (target === e.currentTarget || target.closest('.wrapper')) return;
@@ -301,4 +276,44 @@ toolbar.addEventListener('click', (e) => {
   e.preventDefault();
 });
 
+
 /**************************************************/
+
+editor.ondrop = function(e) {
+  e.preventDefault();
+  editor.focus();
+  let file = e.dataTransfer.files[0];
+
+  if (file && /image/.test(file.type))  {
+    insertImageFile(file);
+  }
+}
+
+
+editor.onpaste = function(e) {
+  e.preventDefault();
+
+  const items = e.clipboardData.items;
+  const item = items[items.length - 1];
+
+  if (/image/.test(item.type)) {
+    const file = item.getAsFile();
+    insertImageFile(file);
+  } else if (/text/.test(item.type)) {
+    item.getAsString(data => {
+      document.execCommand('insertHTML', false, data);
+    });
+  }
+};
+
+function insertImageFile(file) {
+  let reader = new FileReader();
+
+  reader.onload = function(e) {
+    document.execCommand('insertImage', false, e.target.result);
+    let img = editor.querySelector('img')
+    document.execCommand('enableObjectResizing', false, img);
+  };
+
+  reader.readAsDataURL(file);
+}
